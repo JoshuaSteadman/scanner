@@ -52,6 +52,7 @@
             width: 100%;
             max-width: 300px;
             margin: 20px 0;
+            display: none;
         }
     </style>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.4/html5-qrcode.min.js" integrity="sha512-k/KAe4Yff9EUdYI5/IAHlwUswqeipP+Cp5qnrsUjTPCgl51La2/JhyyjNciztD7mWNKLSXci48m7cctATKfLlQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
@@ -59,12 +60,15 @@
 <body>
     <h1>UPC Code Lookup</h1>
     <button onclick="startScanner()">Scan UPC</button>
-    <div id="reader" style="display: none;"></div>
+    <button onclick="stopScanner()" style="display: none;" id="stopButton">Stop Scanner</button>
+    <div id="reader"></div>
     <input type="text" id="upcInput" placeholder="Enter UPC code">
     <button onclick="lookupProduct()">Lookup Product</button>
     <div id="productInfo" class="product-info"></div>
 
     <script>
+        let html5QrCode;
+
         async function lookupProduct() {
             const upc = document.getElementById('upcInput').value;
             const url = `https://world.openfoodfacts.org/api/v0/product/${upc}.json`;
@@ -78,15 +82,32 @@
 
                 if (data.status === 1) {
                     const product = data.product;
-                    const productLink = `https://world.openfoodfacts.org/product/${product._id}`;
+                    const ingredients = product.ingredients_text ? product.ingredients_text.split(',') : ['N/A'];
+                    
+                    let ingredientsList = '<ul>';
+                    ingredients.forEach(ingredient => {
+                        ingredientsList += `<li>${ingredient.trim()}</li>`;
+                    });
+                    ingredientsList += '</ul>';
 
                     productInfoDiv.innerHTML = `
                         <strong>Product Name:</strong> ${product.product_name}<br>
-                        <strong>Product Number:</strong> ${product._id}<br>
-                        <strong>Brand:</strong> ${product.brands || 'N/A'}<br>
-                        <strong>Categories:</strong> ${product.categories || 'N/A'}<br>
-                        <strong>Labels:</strong> ${product.labels || 'N/A'}<br>
-                        <a href="${productLink}" target="_blank">View Nutritional Information</a>
+                        <strong>Manufacturer:</strong> ${product.brands || 'N/A'}<br>
+                        <details>
+                            <summary>Ingredients</summary>
+                            ${ingredientsList}
+                        </details>
+                        <details>
+                            <summary>Nutritional Information</summary>
+                            <ul>
+                                <li>Energy: ${product.nutriments.energy} ${product.nutriments.energy_unit}</li>
+                                <li>Fat: ${product.nutriments.fat} ${product.nutriments.fat_unit}</li>
+                                <li>Carbohydrates: ${product.nutriments.carbohydrates} ${product.nutriments.carbohydrates_unit}</li>
+                                <li>Sugars: ${product.nutriments.sugars} ${product.nutriments.sugars_unit}</li>
+                                <li>Proteins: ${product.nutriments.proteins} ${product.nutriments.proteins_unit}</li>
+                                <li>Salt: ${product.nutriments.salt} ${product.nutriments.salt_unit}</li>
+                            </ul>
+                        </details>
                     `;
                 } else {
                     productInfoDiv.innerHTML = 'Product not found.';
@@ -102,9 +123,11 @@
 
         function startScanner() {
             const reader = document.getElementById('reader');
+            const stopButton = document.getElementById('stopButton');
             reader.style.display = 'block';
+            stopButton.style.display = 'block';
 
-            const html5QrCode = new Html5Qrcode("reader");
+            html5QrCode = new Html5Qrcode("reader");
             html5QrCode.start(
                 { facingMode: "environment" }, // Use back camera
                 {
@@ -115,8 +138,7 @@
                     // Handle the scanned code
                     document.getElementById('upcInput').value = decodedText;
                     lookupProduct();
-                    html5QrCode.stop();
-                    reader.style.display = 'none';
+                    stopScanner();
                 },
                 (errorMessage) => {
                     // Handle scan error
@@ -126,6 +148,17 @@
                 // Handle start error
                 console.error(err);
             });
+        }
+
+        function stopScanner() {
+            if (html5QrCode) {
+                html5QrCode.stop().then(ignore => {
+                    document.getElementById('reader').style.display = 'none';
+                    document.getElementById('stopButton').style.display = 'none';
+                }).catch(err => {
+                    console.error('Stop failed', err);
+                });
+            }
         }
     </script>
 </body>
