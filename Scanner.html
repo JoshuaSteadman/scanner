@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UPC Code Lookup</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background-color: #f0f0f0;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        input, button {
+            padding: 10px;
+            font-size: 16px;
+            margin: 10px;
+            width: 80%;
+            max-width: 300px;
+        }
+        button {
+            cursor: pointer;
+        }
+        .product-info {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #fff;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            width: 80%;
+            max-width: 300px;
+            text-align: left;
+            overflow-y: auto;
+            max-height: 50vh;
+        }
+        @media screen and (max-width: 600px) {
+            input, button, .product-info {
+                width: 90%;
+                max-width: 90%;
+            }
+        }
+        #reader {
+            width: 100%;
+            max-width: 300px;
+            margin: 20px 0;
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.4/html5-qrcode.min.js" integrity="sha512-k/KAe4Yff9EUdYI5/IAHlwUswqeipP+Cp5qnrsUjTPCgl51La2/JhyyjNciztD7mWNKLSXci48m7cctATKfLlQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+</head>
+<body>
+    <h1>UPC Code Lookup</h1>
+    <button onclick="startScanner()">Scan UPC</button>
+    <div id="reader" style="display: none;"></div>
+    <input type="text" id="upcInput" placeholder="Enter UPC code">
+    <button onclick="lookupProduct()">Lookup Product</button>
+    <div id="productInfo" class="product-info"></div>
+
+    <script>
+        async function lookupProduct() {
+            const upc = document.getElementById('upcInput').value;
+            const url = `https://world.openfoodfacts.org/api/v0/product/${upc}.json`;
+            const productInfoDiv = document.getElementById('productInfo');
+
+            productInfoDiv.innerHTML = 'Loading...';
+
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+
+                if (data.status === 1) {
+                    const product = data.product;
+                    const productLink = `https://world.openfoodfacts.org/product/${product._id}`;
+
+                    productInfoDiv.innerHTML = `
+                        <strong>Product Name:</strong> ${product.product_name}<br>
+                        <strong>Product Number:</strong> ${product._id}<br>
+                        <strong>Brand:</strong> ${product.brands || 'N/A'}<br>
+                        <strong>Categories:</strong> ${product.categories || 'N/A'}<br>
+                        <strong>Labels:</strong> ${product.labels || 'N/A'}<br>
+                        <a href="${productLink}" target="_blank">View Nutritional Information</a>
+                    `;
+                } else {
+                    productInfoDiv.innerHTML = 'Product not found.';
+                }
+
+                // Scroll to the top of the result
+                productInfoDiv.scrollIntoView({ behavior: 'smooth' });
+            } catch (error) {
+                productInfoDiv.innerHTML = 'Error retrieving product information.';
+                console.error(error);
+            }
+        }
+
+        function startScanner() {
+            const reader = document.getElementById('reader');
+            reader.style.display = 'block';
+
+            const html5QrCode = new Html5Qrcode("reader");
+            html5QrCode.start(
+                { facingMode: "environment" }, // Use back camera
+                {
+                    fps: 10,
+                    qrbox: { width: 250, height: 250 }
+                },
+                (decodedText, decodedResult) => {
+                    // Handle the scanned code
+                    document.getElementById('upcInput').value = decodedText;
+                    lookupProduct();
+                    html5QrCode.stop();
+                    reader.style.display = 'none';
+                },
+                (errorMessage) => {
+                    // Handle scan error
+                    console.error(errorMessage);
+                }
+            ).catch((err) => {
+                // Handle start error
+                console.error(err);
+            });
+        }
+    </script>
+</body>
+</html>
