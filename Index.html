@@ -48,26 +48,26 @@
                 max-width: 90%;
             }
         }
-        #reader {
+        #scanner-container {
             width: 100%;
             max-width: 300px;
             margin: 20px 0;
             display: none;
         }
     </style>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.4/html5-qrcode.min.js" integrity="sha512-k/KAe4Yff9EUdYI5/IAHlwUswqeipP+Cp5qnrsUjTPCgl51La2/JhyyjNciztD7mWNKLSXci48m7cctATKfLlQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@ericblade/quagga2@1.2.6/dist/quagga.min.js"></script>
 </head>
 <body>
     <h1>UPC Code Lookup</h1>
     <button onclick="startScanner()">Scan UPC</button>
     <button onclick="stopScanner()" style="display: none;" id="stopButton">Stop Scanner</button>
-    <div id="reader"></div>
+    <div id="scanner-container"></div>
     <input type="text" id="upcInput" placeholder="Enter UPC code">
     <button onclick="lookupProduct()">Lookup Product</button>
     <div id="productInfo" class="product-info"></div>
 
     <script>
-        let html5QrCode;
+        let _scannerIsRunning = false;
 
         async function lookupProduct() {
             const upc = document.getElementById('upcInput').value;
@@ -113,7 +113,6 @@
                     productInfoDiv.innerHTML = 'Product not found.';
                 }
 
-                // Scroll to the top of the result
                 productInfoDiv.scrollIntoView({ behavior: 'smooth' });
             } catch (error) {
                 productInfoDiv.innerHTML = 'Error retrieving product information.';
@@ -122,43 +121,54 @@
         }
 
         function startScanner() {
-            const reader = document.getElementById('reader');
+            const scannerContainer = document.getElementById('scanner-container');
             const stopButton = document.getElementById('stopButton');
-            reader.style.display = 'block';
+            scannerContainer.style.display = 'block';
             stopButton.style.display = 'block';
 
-            html5QrCode = new Html5Qrcode("reader");
-            html5QrCode.start(
-                { facingMode: "environment" }, // Use back camera
-                {
-                    fps: 10,
-                    qrbox: { width: 250, height: 250 },
-                    formatsToSupport: [Html5QrcodeSupportedFormats.UPC_A, Html5QrcodeSupportedFormats.UPC_E]
-                },
-                (decodedText, decodedResult) => {
-                    // Handle the scanned code
-                    document.getElementById('upcInput').value = decodedText;
+            if (!_scannerIsRunning) {
+                Quagga.init({
+                    inputStream: {
+                        name: "Live",
+                        type: "LiveStream",
+                        target: scannerContainer,
+                        constraints: {
+                            width: 480,
+                            height: 320,
+                            facingMode: "environment" // or "user" for the front camera
+                        },
+                    },
+                    decoder: {
+                        readers: [
+                            "upc_reader",
+                            "upc_e_reader"
+                        ]
+                    },
+                }, function (err) {
+                    if (err) {
+                        console.log(err);
+                        return;
+                    }
+                    console.log("Initialization finished. Ready to start");
+                    Quagga.start();
+                    _scannerIsRunning = true;
+                });
+
+                Quagga.onDetected(function (data) {
+                    const code = data.codeResult.code;
+                    document.getElementById('upcInput').value = code;
                     lookupProduct();
                     stopScanner();
-                },
-                (errorMessage) => {
-                    // Handle scan error
-                    console.error(errorMessage);
-                }
-            ).catch((err) => {
-                // Handle start error
-                console.error(err);
-            });
+                });
+            }
         }
 
         function stopScanner() {
-            if (html5QrCode) {
-                html5QrCode.stop().then(ignore => {
-                    document.getElementById('reader').style.display = 'none';
-                    document.getElementById('stopButton').style.display = 'none';
-                }).catch(err => {
-                    console.error('Stop failed', err);
-                });
+            if (_scannerIsRunning) {
+                Quagga.stop();
+                _scannerIsRunning = false;
+                document.getElementById('scanner-container').style.display = 'none';
+                document.getElementById('stopButton').style.display = 'none';
             }
         }
     </script>
