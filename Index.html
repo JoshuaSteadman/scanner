@@ -3,174 +3,387 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>UPC Code Lookup</title>
+    <title>CSV Parser and Viewer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            background-color: #f0f0f0;
+        .sortable:hover { cursor: pointer; }
+        .multi-select-dropdown {
+            position: relative;
+            display: inline-block;
         }
-        h1 {
-            color: #333;
-            text-align: center;
+        .multi-select-dropdown-content {
+            display: none;
+            position: absolute;
+            background-color: #f9f9f9;
+            min-width: 160px;
+            box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+            z-index: 1;
+            max-height: 300px;
+            overflow-y: auto;
         }
-        input, button {
-            padding: 10px;
-            font-size: 16px;
-            margin: 10px;
-            width: 80%;
-            max-width: 300px;
+        .multi-select-dropdown-content label {
+            display: block;
+            padding: 5px;
         }
-        button {
+        .multi-select-dropdown-content label:hover {
+            background-color: #f1f1f1;
+        }
+        .show {display:block;}
+        table {
+            table-layout: auto;
+            width: 100%;
+        }
+        th, td {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 200px;
+        }
+        .apn-lookup {
             cursor: pointer;
         }
-        .product-info {
-            margin-top: 20px;
-            padding: 10px;
-            background-color: #fff;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            width: 80%;
-            max-width: 300px;
-            text-align: left;
-            overflow-y: auto;
-            max-height: 50vh;
+        .apn-lookup:hover {
+            text-decoration: underline;
         }
-        @media screen and (max-width: 600px) {
-            input, button, .product-info {
-                width: 90%;
-                max-width: 90%;
-            }
-        }
-        #scanner-container {
-            width: 100%;
-            max-width: 300px;
-            margin: 20px 0;
+        .hidden-column {
             display: none;
         }
     </style>
-    <script src="https://cdn.jsdelivr.net/npm/@ericblade/quagga2@1.2.6/dist/quagga.min.js"></script>
 </head>
-<body>
-    <h1>UPC Code Lookup</h1>
-    <button onclick="startScanner()">Scan UPC</button>
-    <button onclick="stopScanner()" style="display: none;" id="stopButton">Stop Scanner</button>
-    <div id="scanner-container"></div>
-    <input type="text" id="upcInput" placeholder="Enter UPC code">
-    <button onclick="lookupProduct()">Lookup Product</button>
-    <div id="productInfo" class="product-info"></div>
+<body class="p-4">
+    <input type="file" accept=".csv" id="csvFileInput" class="mb-4 p-2 border rounded">
+    <div class="mb-4 flex space-x-2">
+        <div class="multi-select-dropdown">
+            <button onclick="toggleDropdown()" class="p-2 border rounded">Select Routes</button>
+            <div id="routeDropdown" class="multi-select-dropdown-content">
+                <!-- Route checkboxes will be dynamically added here -->
+            </div>
+        </div>
+        <button onclick="toggleProcessingDeliveryRows()" class="p-2 border rounded" id="toggleProcessingBtn">Hide "40 Processing Delivery on paper"</button>
+        <button onclick="copyAllAPNLookups()" class="p-2 border rounded">Copy All APN Lookups</button>
+        <button onclick="bulkEnterDescriptions()" class="p-2 border rounded">Bulk Enter Descriptions</button>
+        <button onclick="toggleColumnVisibility()" class="p-2 border rounded">Toggle Column Visibility</button>
+    </div>
+    <div id="tableContainer" class="overflow-x-auto"></div>
+    <div id="debugInfo" class="mt-4 p-2 bg-gray-100"></div>
 
     <script>
-        let _scannerIsRunning = false;
+let csvData = { headers: [], data: [] };
+let sortColumns = [
+    { column: 'Route', direction: 'asc' },
+    { column: 'Reason', direction: 'asc' }
+];
+let selectedRoutes = new Set();
+let apnDescriptions = {};
+let hideProcessingDelivery = false;
+let hiddenColumns = new Set();
+let isFirstLoad = true;
 
-        async function lookupProduct() {
-            const upc = document.getElementById('upcInput').value;
-            const url = `https://world.openfoodfacts.org/api/v0/product/${upc}.json`;
-            const productInfoDiv = document.getElementById('productInfo');
+function parseCSV(text) {
+    console.log("Parsing CSV...");
+    const lines = text.split('\n').filter(line => line.trim() !== '');
+    const originalHeaders = lines[0].split(',').map(header => header.trim());
+    
+    const headerMap = {
+        'Order Number': 'Order #',
+        'Customer Number': 'Cust. #',
+        'Customer Name': 'Cust. Name',
+        'Route': 'Route',
+        'Reason Code': 'Reason',
+        'Purpose': 'Purpose',
+        'Item ID': 'Item ID',
+        'Qty (Exc / Tot)': 'Qty (E/T)',
+        'Driver Name': 'Driver',
+        'Date': 'Date',
+        'APN Lookup': 'APN',
+        'APN Description': 'APN Desc.'
+    };
 
-            productInfoDiv.innerHTML = 'Loading...';
-
-            try {
-                const response = await fetch(url);
-                const data = await response.json();
-
-                if (data.status === 1) {
-                    const product = data.product;
-                    const ingredients = product.ingredients_text ? product.ingredients_text.split(',') : ['N/A'];
-                    
-                    let ingredientsList = '<ul>';
-                    ingredients.forEach(ingredient => {
-                        ingredientsList += `<li>${ingredient.trim()}</li>`;
-                    });
-                    ingredientsList += '</ul>';
-
-                    productInfoDiv.innerHTML = `
-                        <strong>Product Name:</strong> ${product.product_name}<br>
-                        <strong>Manufacturer:</strong> ${product.brands || 'N/A'}<br>
-                        <details>
-                            <summary>Ingredients</summary>
-                            ${ingredientsList}
-                        </details>
-                        <details>
-                            <summary>Nutritional Information</summary>
-                            <ul>
-                                <li>Energy: ${product.nutriments.energy} ${product.nutriments.energy_unit}</li>
-                                <li>Fat: ${product.nutriments.fat} ${product.nutriments.fat_unit}</li>
-                                <li>Carbohydrates: ${product.nutriments.carbohydrates} ${product.nutriments.carbohydrates_unit}</li>
-                                <li>Sugars: ${product.nutriments.sugars} ${product.nutriments.sugars_unit}</li>
-                                <li>Proteins: ${product.nutriments.proteins} ${product.nutriments.proteins_unit}</li>
-                                <li>Salt: ${product.nutriments.salt} ${product.nutriments.salt_unit}</li>
-                            </ul>
-                        </details>
-                    `;
-                } else {
-                    productInfoDiv.innerHTML = 'Product not found.';
-                }
-
-                productInfoDiv.scrollIntoView({ behavior: 'smooth' });
-            } catch (error) {
-                productInfoDiv.innerHTML = 'Error retrieving product information.';
-                console.error(error);
+    const headers = originalHeaders.map(header => headerMap[header] || header);
+    console.log(`Shortened Headers: ${headers.join(', ')}`);
+    
+    const data = lines.slice(1).map(line => {
+        const values = [];
+        let inQuotes = false;
+        let currentValue = '';
+        
+        for (let char of line) {
+            if (char === '"') {
+                inQuotes = !inQuotes;
+            } else if (char === ',' && !inQuotes) {
+                values.push(currentValue.trim());
+                currentValue = '';
+            } else {
+                currentValue += char;
             }
         }
+        values.push(currentValue.trim());
+        
+        const row = headers.reduce((obj, header, index) => {
+            obj[header] = values[index] || '';
+            return obj;
+        }, {});
 
-        function startScanner() {
-            const scannerContainer = document.getElementById('scanner-container');
-            const stopButton = document.getElementById('stopButton');
-            scannerContainer.style.display = 'block';
-            stopButton.style.display = 'block';
-
-            if (!_scannerIsRunning) {
-                Quagga.init({
-                    inputStream: {
-                        name: "Live",
-                        type: "LiveStream",
-                        target: scannerContainer,
-                        constraints: {
-                            width: 480,
-                            height: 320,
-                            facingMode: "environment" // or "user" for the front camera
-                        },
-                    },
-                    decoder: {
-                        readers: [
-                            "upc_reader",
-                            "upc_e_reader"
-                        ]
-                    },
-                }, function (err) {
-                    if (err) {
-                        console.log(err);
-                        return;
-                    }
-                    console.log("Initialization finished. Ready to start");
-                    Quagga.start();
-                    _scannerIsRunning = true;
-                });
-
-                Quagga.onDetected(function (data) {
-                    const code = data.codeResult.code;
-                    document.getElementById('upcInput').value = code;
-                    lookupProduct();
-                    stopScanner();
-                });
-            }
+        if (row['Order #']) {
+            row['Order #'] = row['Order #'].substring(0, 7);
         }
 
-        function stopScanner() {
-            if (_scannerIsRunning) {
-                Quagga.stop();
-                _scannerIsRunning = false;
-                document.getElementById('scanner-container').style.display = 'none';
-                document.getElementById('stopButton').style.display = 'none';
-            }
+        if (row['Item ID']) {
+            const itemId = row['Item ID'];
+            const len = itemId.length;
+            const boldStart = Math.max(0, len - 10);
+            const boldEnd = Math.max(0, len - 3);
+            row['Item ID'] = 
+                itemId.substring(0, boldStart) + 
+                '<strong>' + itemId.substring(boldStart, boldEnd) + '</strong>' + 
+                itemId.substring(boldEnd);
+            
+            row['APN'] = itemId.substring(boldStart, boldEnd);
         }
-    </script>
+
+        if (row['Qty (E/T)']) {
+            const [exc, tot] = row['Qty (E/T)'].split('/').map(v => parseInt(v.trim()) || 0);
+            row['Quantity'] = { exc, tot };
+        }
+
+        return row;
+    });
+
+    console.log(`Parsed ${data.length} rows`);
+    headers.push('APN Desc.');
+
+    return { headers, data: mergeRows(data) };
+}
+
+function mergeRows(data) {
+    console.log("Merging rows...");
+    const mergedData = {};
+    data.forEach(row => {
+        const key = `${row['Order #']}-${row['APN']}`;
+        if (mergedData[key]) {
+            mergedData[key]['Quantity'].exc += row['Quantity'].exc;
+            mergedData[key]['Quantity'].tot += row['Quantity'].tot;
+        } else {
+            mergedData[key] = { ...row };
+        }
+    });
+
+    const result = Object.values(mergedData).map(row => ({
+        ...row,
+        'Qty (E/T)': `${row['Quantity'].exc} / ${row['Quantity'].tot}`
+    }));
+    console.log(`Merged to ${result.length} rows`);
+    return result;
+}
+
+function handleFileUpload(event) {
+    console.log("File upload started");
+    const file = event.target.files[0];
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        const text = e.target.result;
+        csvData = parseCSV(text);
+        populateRouteDropdown();
+        isFirstLoad = true;
+        apnDescriptions = {};
+        renderTable();
+    };
+    reader.readAsText(file);
+}
+
+function populateRouteDropdown() {
+    console.log("Populating route dropdown");
+    const dropdown = document.getElementById('routeDropdown');
+    const uniqueRoutes = [...new Set(csvData.data.map(row => row['Route']))];
+    
+    dropdown.innerHTML = uniqueRoutes.map(route => 
+        `<label><input type="checkbox" value="${route}" onchange="handleRouteSelection(this)"> ${route}</label>`
+    ).join('');
+}
+
+function handleRouteSelection(checkbox) {
+    if (checkbox.checked) {
+        selectedRoutes.add(checkbox.value);
+    } else {
+        selectedRoutes.delete(checkbox.value);
+    }
+    renderTable();
+}
+
+function toggleDropdown() {
+    document.getElementById("routeDropdown").classList.toggle("show");
+}
+
+function toggleProcessingDeliveryRows() {
+    hideProcessingDelivery = !hideProcessingDelivery;
+    const btn = document.getElementById('toggleProcessingBtn');
+    btn.textContent = hideProcessingDelivery ? 'Show "40 Processing Delivery on paper"' : 'Hide "40 Processing Delivery on paper"';
+    renderTable();
+}
+
+function copyAllAPNLookups() {
+    const visibleData = getFilteredAndSortedData();
+    const apnLookups = visibleData.map(row => row['APN']).join('\n');
+    navigator.clipboard.writeText(apnLookups).then(() => {
+        alert('All visible APN Lookups copied to clipboard!');
+    }).catch(err => {
+        console.error('Failed to copy: ', err);
+    });
+}
+
+function bulkEnterDescriptions() {
+    navigator.clipboard.readText().then(text => {
+        const lines = text.split('\n');
+        const visibleData = getFilteredAndSortedData();
+        lines.forEach((line, index) => {
+            if (index < visibleData.length) {
+                const apn = visibleData[index]['APN'];
+                apnDescriptions[apn] = line.trim();
+            }
+        });
+        renderTable();
+    }).catch(err => {
+        console.error('Failed to read clipboard: ', err);
+        alert('Failed to read from clipboard. Please ensure you have copying permissions.');
+    });
+}
+
+function truncateText(text, maxLength) {
+    return text.length > maxLength ? text.substring(0, maxLength - 3) + '...' : text;
+}
+
+function handleSort(column) {
+    const existingSort = sortColumns.find(sc => sc.column === column);
+    if (existingSort) {
+        existingSort.direction = existingSort.direction === 'asc' ? 'desc' : 'asc';
+        sortColumns = [existingSort, ...sortColumns.filter(sc => sc.column !== column)];
+    } else {
+        sortColumns.unshift({ column, direction: 'asc' });
+    }
+    sortColumns = sortColumns.slice(0, 2);  // Keep only the top two sort criteria
+    renderTable();
+}
+
+function getRowColor(row) {
+    const reasonCode = row['Reason'];
+    const purpose = row['Purpose'];
+
+    if (reasonCode === '01 Truck Short') return 'bg-yellow-200';
+    if (reasonCode.startsWith('13 Reclaim')) return 'bg-green-200';
+    if (reasonCode.startsWith('04')) return 'bg-yellow-300';
+    if (reasonCode === '10 Spoiled Product' || reasonCode.startsWith('03')) return 'bg-red-200';
+    if (reasonCode.startsWith('99P Pick Up Not A')) return 'bg-orange-200';
+    if (purpose && purpose.toLowerCase().includes('frozen') && !reasonCode.startsWith('01')) return 'bg-blue-200';
+    return '';
+}
+
+function getFilteredAndSortedData() {
+    console.log("Filtering and sorting data");
+    return csvData.data
+        .filter(row => {
+            const routeCondition = selectedRoutes.size === 0 || selectedRoutes.has(row['Route']);
+            const processingCondition = !hideProcessingDelivery || row['Reason'] !== '40 Processing Delivery on paper';
+            return routeCondition && processingCondition;
+        })
+        .sort((a, b) => {
+            for (const { column, direction } of sortColumns) {
+                if (a[column] < b[column]) return direction === 'asc' ? -1 : 1;
+                if (a[column] > b[column]) return direction === 'asc' ? 1 : -1;
+            }
+            return 0;
+        });
+}
+
+function toggleColumnVisibility() {
+    const columnsToToggle = ['Date', 'Cust. Name', 'APN', 'Driver', 'Item ID'];
+    columnsToToggle.forEach(column => {
+        if (hiddenColumns.has(column)) {
+            hiddenColumns.delete(column);
+        } else {
+            hiddenColumns.add(column);
+        }
+    });
+    renderTable();
+}
+
+function getColumnWidth(header) {
+    switch (header) {
+        case 'Order #': return '80px';
+        case 'Cust. #': return '80px';
+        case 'Cust. Name': return '150px';
+        case 'Route': return '60px';
+        case 'Reason': return '120px';
+        case 'Purpose': return '100px';
+        case 'Item ID': return '120px';
+        case 'Qty (E/T)': return '80px';
+        case 'Driver': return '100px';
+        case 'Date': return '80px';
+        case 'APN': return '100px';
+        case 'APN Desc.': return '120px';
+        default: return 'auto';
+    }
+}
+
+function renderTable() {
+    console.log("Rendering table");
+    const tableContainer = document.getElementById('tableContainer');
+    const filteredAndSortedData = getFilteredAndSortedData();
+    console.log(`Rendering ${filteredAndSortedData.length} rows`);
+
+    let tableHTML = '<table class="border-collapse">';
+    
+    // Render headers
+    tableHTML += '<thead><tr>';
+    csvData.headers.forEach(header => {
+        const sortInfo = sortColumns.find(sc => sc.column === header);
+        const sortIndicator = sortInfo ? (sortInfo.direction === 'asc' ? ' ▲' : ' ▼') : '';
+        const hiddenClass = hiddenColumns.has(header) ? 'hidden-column' : '';
+        const columnWidth = getColumnWidth(header);
+        tableHTML += `<th class="border p-2 bg-gray-100 overflow-hidden sortable ${hiddenClass}" onclick="handleSort('${header}')" style="width: ${columnWidth};">${header}${sortIndicator}</th>`;
+    });
+    tableHTML += '</tr></thead>';
+
+    // Render body
+    tableHTML += '<tbody>';
+    filteredAndSortedData.forEach(row => {
+        const rowColor = getRowColor(row);
+        tableHTML += `<tr class="${rowColor}">`;
+        csvData.headers.forEach(header => {
+            let cellContent = row[header] || '';
+            if (header === 'APN') {
+                cellContent = `<span class="apn-lookup" onclick="copyToClipboard('${cellContent}')">${cellContent}</span>`;
+            } else if (header === 'APN Desc.') {
+                const apn = row['APN'];
+                const description = isFirstLoad ? '' : (apnDescriptions[apn] || '');
+                cellContent = `<input type="text" value="${description}" onchange="updateAPNDescription('${apn}', this.value)" class="w-full p-1 border rounded" maxlength="20">`;
+            }
+            const hiddenClass = hiddenColumns.has(header) ? 'hidden-column' : '';
+            tableHTML += `<td class="border p-2 overflow-hidden ${hiddenClass}">${cellContent}</td>`;
+        });
+        tableHTML += '</tr>';
+    });
+    tableHTML += '</tbody>';
+
+    tableHTML += '</table>';
+
+    tableContainer.innerHTML = tableHTML;
+    isFirstLoad = false;
+}
+
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(() => {
+        alert('APN Lookup copied to clipboard!');
+    }).catch(err => {
+        console.error('Failed to copy: ', err);
+    });
+}
+
+function updateAPNDescription(apn, description) {
+    apnDescriptions[apn] = description;
+    renderTable();
+}
+
+document.getElementById('csvFileInput').addEventListener('change', handleFileUpload);
+</script>
 </body>
 </html>
