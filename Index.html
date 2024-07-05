@@ -67,7 +67,7 @@
     <div id="tableContainer" class="overflow-x-auto"></div>
     <div id="debugInfo" class="mt-4 p-2 bg-gray-100"></div>
 
-    <script>
+<script>
 let csvData = { headers: [], data: [] };
 let sortColumns = [
     { column: 'Route', direction: 'asc' },
@@ -327,6 +327,21 @@ function getColumnWidth(header) {
     }
 }
 
+function handleDriverClick(driverName, route) {
+    if (selectedRoutes.has(route)) {
+        selectedRoutes.delete(route);
+        updateRouteCheckbox(route, false);
+        renderTable();
+    }
+}
+
+function updateRouteCheckbox(route, checked) {
+    const checkbox = document.querySelector(`input[type="checkbox"][value="${route}"]`);
+    if (checkbox) {
+        checkbox.checked = checked;
+    }
+}
+
 function renderTable() {
     console.log("Rendering table");
     const tableContainer = document.getElementById('tableContainer');
@@ -359,6 +374,8 @@ function renderTable() {
                 const apn = row['APN'];
                 const description = isFirstLoad ? '' : (apnDescriptions[apn] || '');
                 cellContent = `<input type="text" value="${description}" onchange="updateAPNDescription('${apn}', this.value)" class="w-full p-1 border rounded" maxlength="20">`;
+            } else if (header === 'Driver') {
+                cellContent = `<span class="cursor-pointer hover:underline" onclick="handleDriverClick('${cellContent}', '${row['Route']}')">${cellContent}</span>`;
             }
             const hiddenClass = hiddenColumns.has(header) ? 'hidden-column' : '';
             tableHTML += `<td class="border p-2 overflow-hidden ${hiddenClass}">${cellContent}</td>`;
