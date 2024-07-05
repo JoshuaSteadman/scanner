@@ -341,7 +341,23 @@ function getRowColor(row) {
     return '';
 }
 
-function getFilteredAndSortedData
+function getFilteredAndSortedData() {
+    console.log("Filtering and sorting data");
+    return csvData.data
+        .filter(row => {
+            const routeCondition = selectedRoutes.has(row['Route']);
+            const processingCondition = !hideProcessingDelivery || row['Reason'] !== '40 Processing Delivery on paper';
+            const driverCondition = !hideLocalDrivers || !isLocalDriver(row['Driver']);
+            return routeCondition && processingCondition && driverCondition;
+        })
+        .sort((a, b) => {
+            for (const { column, direction } of sortColumns) {
+                if (a[column] < b[column]) return direction === 'asc' ? -1 : 1;
+                if (a[column] > b[column]) return direction === 'asc' ? 1 : -1;
+            }
+            return 0;
+        });
+}
 
 
 function toggleColumnVisibility() {
