@@ -393,7 +393,10 @@ function getColumnWidth(header) {
 function handleDriverClick(driverName, route) {
     if (selectedRoutes.has(route)) {
         selectedRoutes.delete(route);
-        updateRouteCheckbox(route, false);
+        const checkbox = document.querySelector(`#routeDropdown input[value="${route}"]`);
+        if (checkbox) {
+            checkbox.checked = false;
+        }
         renderTable();
     }
 }
