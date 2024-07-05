@@ -52,13 +52,13 @@
 </head>
 <body class="p-4">
     <div class="mb-4 flex space-x-2">
+        <input type="file" accept=".csv" id="csvFileInput" class="mb-4 p-2 border rounded">
         <div class="multi-select-dropdown">
             <button onclick="toggleDropdown()" class="p-2 border rounded">Select Routes</button>
             <div id="routeDropdown" class="multi-select-dropdown-content">
                 <!-- Route checkboxes will be dynamically added here -->
             </div>
         </div>
-        <input type="file" accept=".csv" id="csvFileInput" class="mb-4 p-2 border rounded">
         <button onclick="toggleProcessingDeliveryRows()" class="p-2 border rounded" id="toggleProcessingBtn">Hide "40 Processing Delivery on paper"</button>
         <button onclick="copyAllAPNLookups()" class="p-2 border rounded">Copy All APNS</button>
         <button onclick="bulkEnterDescriptions()" class="p-2 border rounded">Bulk Enter Desc</button>
