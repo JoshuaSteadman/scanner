@@ -129,9 +129,6 @@ function toggleLocalDrivers() {
                 selectedRoutes.delete(row['Route']);
             }
         });
-    } else {
-        // Reselect all routes when showing all drivers
-        selectedRoutes = new Set(csvData.data.map(row => row['Route']));
     }
 
     updateRouteCheckboxes();
@@ -148,9 +145,16 @@ function invertRouteSelection() {
         }
     });
 
+    // Ensure all routes are visible by showing local drivers
+    if (hideLocalDrivers) {
+        hideLocalDrivers = false;
+        document.getElementById('toggleLocalDriversBtn').textContent = 'Hide Local Drivers';
+    }
+
     updateRouteCheckboxes();
     renderTable();
 }
+    
 function parseCSV(text) {
     console.log("Parsing CSV...");
     const lines = text.split('\n').filter(line => line.trim() !== '');
