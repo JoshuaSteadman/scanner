@@ -196,6 +196,9 @@ function populateRouteDropdown() {
     const dropdown = document.getElementById('routeDropdown');
     const uniqueRoutes = [...new Set(csvData.data.map(row => row['Route']))];
     
+    // Sort the routes in ascending order
+    uniqueRoutes.sort((a, b) => a.localeCompare(b));
+    
     dropdown.innerHTML = uniqueRoutes.map(route => 
         `<label><input type="checkbox" value="${route}" onchange="handleRouteSelection(this)"> ${route}</label>`
     ).join('');
