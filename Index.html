@@ -332,6 +332,7 @@ function getFilteredAndSortedData() {
         });
 }
 
+
 function toggleColumnVisibility() {
     const columnsToToggle = ['Date', 'Cust. Name', 'APN', 'Driver', 'Item ID'];
     columnsToToggle.forEach(column => {
@@ -370,11 +371,11 @@ function handleDriverClick(driverName, route) {
     }
 }
 
-function updateRouteCheckbox(route, checked) {
-    const checkbox = document.querySelector(`input[type="checkbox"][value="${route}"]`);
-    if (checkbox) {
-        checkbox.checked = checked;
-    }
+function updateRouteCheckboxes() {
+    const checkboxes = document.querySelectorAll('#routeDropdown input[type="checkbox"]');
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = selectedRoutes.has(checkbox.value);
+    });
 }
     
 function updateRouteCheckboxes() {
