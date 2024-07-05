@@ -60,8 +60,9 @@
             </div>
         </div>
         <button onclick="toggleProcessingDeliveryRows()" class="p-2 border rounded" id="toggleProcessingBtn">Hide "40 Processing Delivery on paper"</button>
-        <button onclick="copyAllAPNLookups()" class="p-2 border rounded">Copy All APN Lookups</button>
-        <button onclick="bulkEnterDescriptions()" class="p-2 border rounded">Bulk Enter Descriptions</button>
+        <button onclick="copyAllAPNLookups()" class="p-2 border rounded">Copy All APNS/button>
+        <button onclick="bulkEnterDescriptions()" class="p-2 border rounded">Bulk Enter Desc.</button>
+        <button onclick="copyAllDescriptions()" class="p-2 border rounded">Copy Column Desc.</button>
         <button onclick="toggleColumnVisibility()" class="p-2 border rounded">Toggle Column Visibility</button>
         <button onclick="toggleLocalDrivers()" class="p-2 border rounded" id="toggleLocalDriversBtn">Hide Local Drivers</button>
         <button onclick="invertRouteSelection()" class="p-2 border rounded">Invert Route Selection</button>
@@ -133,6 +134,20 @@ function toggleLocalDrivers() {
 
     updateRouteCheckboxes();
     renderTable();
+}
+function copyAllDescriptions() {
+    const visibleData = getFilteredAndSortedData();
+    const descriptions = visibleData.map(row => {
+        const apn = row['APN'];
+        return apnDescriptions[apn] || '';
+    }).join('\n');
+    
+    navigator.clipboard.writeText(descriptions).then(() => {
+        alert('All APN descriptions copied to clipboard!');
+    }).catch(err => {
+        console.error('Failed to copy descriptions: ', err);
+        alert('Failed to copy descriptions to clipboard. Please ensure you have copying permissions.');
+    });
 }
 function invertRouteSelection() {
     const allRoutes = new Set(csvData.data.map(row => row['Route']));
