@@ -51,7 +51,6 @@
     </style>
 </head>
 <body class="p-4">
-    <input type="file" accept=".csv" id="csvFileInput" class="mb-4 p-2 border rounded">
     <div class="mb-4 flex space-x-2">
         <div class="multi-select-dropdown">
             <button onclick="toggleDropdown()" class="p-2 border rounded">Select Routes</button>
@@ -59,6 +58,7 @@
                 <!-- Route checkboxes will be dynamically added here -->
             </div>
         </div>
+        <input type="file" accept=".csv" id="csvFileInput" class="mb-4 p-2 border rounded">
         <button onclick="toggleProcessingDeliveryRows()" class="p-2 border rounded" id="toggleProcessingBtn">Hide "40 Processing Delivery on paper"</button>
         <button onclick="copyAllAPNLookups()" class="p-2 border rounded">Copy All APNS</button>
         <button onclick="bulkEnterDescriptions()" class="p-2 border rounded">Bulk Enter Desc</button>
@@ -68,7 +68,6 @@
         <button onclick="invertRouteSelection()" class="p-2 border rounded">Invert Route Selection</button>
     </div>
     <div id="tableContainer" class="overflow-x-auto"></div>
-    <div id="debugInfo" class="mt-4 p-2 bg-gray-100"></div>
 
 <script>
 let csvData = { headers: [], data: [] };
