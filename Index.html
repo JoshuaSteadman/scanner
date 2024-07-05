@@ -288,9 +288,7 @@ function toggleProcessingDeliveryRows() {
 function copyAllAPNLookups() {
     const visibleData = getFilteredAndSortedData();
     const apnLookups = visibleData.map(row => row['APN']).join('\n');
-    navigator.clipboard.writeText(apnLookups).then(() => {
-        alert('All visible APN Lookups copied to clipboard!');
-    }).catch(err => {
+    navigator.clipboard.writeText(apnLookups).catch(err => {
         console.error('Failed to copy: ', err);
     });
 }
