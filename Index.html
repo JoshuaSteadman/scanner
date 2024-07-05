@@ -218,8 +218,11 @@ function populateRouteDropdown() {
     uniqueRoutes.sort((a, b) => a.localeCompare(b));
     
     dropdown.innerHTML = uniqueRoutes.map(route => 
-        `<label><input type="checkbox" value="${route}" onchange="handleRouteSelection(this)"> ${route}</label>`
+        `<label><input type="checkbox" value="${route}" onchange="handleRouteSelection(this)" checked> ${route}</label>`
     ).join('');
+
+    // Add all routes to selectedRoutes
+    selectedRoutes = new Set(uniqueRoutes);
 }
 
 function handleRouteSelection(checkbox) {
