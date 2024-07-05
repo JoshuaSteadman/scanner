@@ -64,6 +64,7 @@
         <button onclick="bulkEnterDescriptions()" class="p-2 border rounded">Bulk Enter Descriptions</button>
         <button onclick="toggleColumnVisibility()" class="p-2 border rounded">Toggle Column Visibility</button>
         <button onclick="toggleLocalDrivers()" class="p-2 border rounded" id="toggleLocalDriversBtn">Hide Local Drivers</button>
+        <button onclick="invertRouteSelection()" class="p-2 border rounded">Invert Route Selection</button>
     </div>
     <div id="tableContainer" class="overflow-x-auto"></div>
     <div id="debugInfo" class="mt-4 p-2 bg-gray-100"></div>
@@ -136,7 +137,20 @@ function toggleLocalDrivers() {
     updateRouteCheckboxes();
     renderTable();
 }
+function invertRouteSelection() {
+    const allRoutes = new Set(csvData.data.map(row => row['Route']));
     
+    allRoutes.forEach(route => {
+        if (selectedRoutes.has(route)) {
+            selectedRoutes.delete(route);
+        } else {
+            selectedRoutes.add(route);
+        }
+    });
+
+    updateRouteCheckboxes();
+    renderTable();
+}
 function parseCSV(text) {
     console.log("Parsing CSV...");
     const lines = text.split('\n').filter(line => line.trim() !== '');
@@ -399,13 +413,6 @@ function handleDriverClick(driverName, route) {
     }
 }
 
-function updateRouteCheckboxes() {
-    const checkboxes = document.querySelectorAll('#routeDropdown input[type="checkbox"]');
-    checkboxes.forEach(checkbox => {
-        checkbox.checked = selectedRoutes.has(checkbox.value);
-    });
-}
-    
 function updateRouteCheckboxes() {
     const checkboxes = document.querySelectorAll('#routeDropdown input[type="checkbox"]');
     checkboxes.forEach(checkbox => {
