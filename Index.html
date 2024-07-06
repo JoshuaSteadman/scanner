@@ -256,7 +256,7 @@ function mergeRows(data) {
     console.log("Merging rows...");
     const mergedData = {};
     data.forEach(row => {
-        const key = `${row['Order #']}-${row['APN']}`;
+        const key = `${row['Order #']}-${row['APN']}-${row['Reason']}`;
         if (mergedData[key]) {
             mergedData[key]['Quantity'].exc += row['Quantity'].exc;
             mergedData[key]['Quantity'].tot += row['Quantity'].tot;
