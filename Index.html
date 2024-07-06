@@ -391,7 +391,12 @@ function parseCSV(text) {
         values.push(currentValue.trim());
         
         const row = headers.reduce((obj, header, index) => {
-            obj[header] = values[index] || '';
+            let value = values[index] || '';
+            // Remove (EDT) from the Date column
+            if (header === 'Date') {
+                value = value.replace(' (EDT)', '');
+            }
+            obj[header] = value;
             return obj;
         }, {});
 
