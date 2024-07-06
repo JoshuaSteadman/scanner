@@ -80,7 +80,6 @@ let selectedRoutes = new Set();
 let apnDescriptions = {};
 let hideProcessingDelivery = false;
 let hiddenColumns = new Set();
-let isFirstLoad = true;
 let hideLocalDrivers = false;
 let localDrivers = new Set([
     "James, John",
@@ -121,55 +120,14 @@ let localDrivers = new Set([
     "Fishman, Ryan",
     "Sanderson, Sean",
     "Robbins, David"
-    
 ]);
-function processPSVData(text) {
-    console.log("Processing PSV data...");
-    const lines = text.split('\n');
-    const headers = lines[0].split('|');
-    const productDescriptionIndex = headers.findIndex(header => header.trim().startsWith('Product Description USF'));
-    const productDescriptionLaptopIndex = headers.findIndex(header => header.trim().startsWith('Product Description Laptop'));
 
-    if (productDescriptionIndex === -1 || productDescriptionLaptopIndex === -1) {
-        alert('Required columns not found in PSV file.');
-        return;
-    }
-
-    lines.slice(1).forEach(line => {
-        const values = line.split('|');
-        if (values.length > Math.max(productDescriptionIndex, productDescriptionLaptopIndex)) {
-            const apn = values[0].trim(); // Assuming the first column is the APN
-            const description = values[productDescriptionIndex].trim() || values[productDescriptionLaptopIndex].trim();
-            if (apn && description) {
-                apnDescriptions[apn] = description;
-            }
-        }
-    });
-    console.log("PSV processing complete. Updating table...");
-    renderTable();
-}
-function handlePSVUpload(event) {
-    const file = event.target.files[0];
-    if (!file) {
-        console.log('No PSV file selected.');
-        return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = (e) => {
-        const text = e.target.result;
-        processPSVData(text);
-    };
-    reader.readAsText(file);
-}
-// Update the toggleLocalDrivers function
 function toggleLocalDrivers() {
     hideLocalDrivers = !hideLocalDrivers;
     const btn = document.getElementById('toggleLocalDriversBtn');
     btn.textContent = hideLocalDrivers ? 'Show Local Drivers' : 'Hide Local Drivers';
 
     if (hideLocalDrivers) {
-        // Deselect routes associated with local drivers
         csvData.data.forEach(row => {
             if (isLocalDriver(row['Driver'])) {
                 selectedRoutes.delete(row['Route']);
@@ -180,6 +138,7 @@ function toggleLocalDrivers() {
     updateRouteCheckboxes();
     renderTable();
 }
+
 function copyAllDescriptions() {
     const visibleData = getFilteredAndSortedData();
     const descriptions = visibleData.map(row => {
@@ -194,6 +153,7 @@ function copyAllDescriptions() {
         alert('Failed to copy descriptions to clipboard. Please ensure you have copying permissions.');
     });
 }
+
 function invertRouteSelection() {
     const allRoutes = new Set(csvData.data.map(row => row['Route']));
     
@@ -205,7 +165,6 @@ function invertRouteSelection() {
         }
     });
 
-    // Ensure all routes are visible by showing local drivers
     if (hideLocalDrivers) {
         hideLocalDrivers = false;
         document.getElementById('toggleLocalDriversBtn').textContent = 'Hide Local Drivers';
@@ -214,7 +173,7 @@ function invertRouteSelection() {
     updateRouteCheckboxes();
     renderTable();
 }
-    
+
 function parseCSV(text) {
     console.log("Parsing CSV...");
     const lines = text.split('\n').filter(line => line.trim() !== '');
@@ -320,11 +279,52 @@ function handleFileUpload(event) {
         const text = e.target.result;
         csvData = parseCSV(text);
         populateRouteDropdown();
-        isFirstLoad = true;
         apnDescriptions = {};
         renderTable();
     };
     reader.readAsText(file);
+}
+
+function handlePSVUpload(event) {
+    const file = event.target.files[0];
+    if (!file) {
+        console.log('No PSV file selected.');
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        const text = e.target.result;
+        processPSVData(text);
+    };
+    reader.readAsText(file);
+}
+
+function processPSVData(text) {
+    console.log("Processing PSV data...");
+    const lines = text.split('\n');
+    const headers = lines[0].split('|');
+    const productDescriptionIndex = headers.findIndex(header => header.trim().startsWith('Product Description USF'));
+    const productDescriptionLaptopIndex = headers.findIndex(header => header.trim().startsWith('Product Description Laptop'));
+
+    if (productDescriptionIndex === -1 || productDescriptionLaptopIndex === -1) {
+        console.log('Required columns not found in PSV file.');
+        return;
+    }
+
+    lines.slice(1).forEach(line => {
+        const values = line.split('|');
+        if (values.length > Math.max(productDescriptionIndex, productDescriptionLaptopIndex)) {
+            const apn = values[0].trim(); // Assuming the first column is the APN
+            const description = values[productDescriptionIndex].trim() || values[productDescriptionLaptopIndex].trim();
+            if (apn && description) {
+                apnDescriptions[apn] = description;
+            }
+        }
+    });
+
+    console.log("PSV processing complete. Updating table...");
+    renderTable();
 }
 
 function populateRouteDropdown() {
@@ -332,14 +332,12 @@ function populateRouteDropdown() {
     const dropdown = document.getElementById('routeDropdown');
     const uniqueRoutes = [...new Set(csvData.data.map(row => row['Route']))];
     
-    // Sort the routes in ascending order
     uniqueRoutes.sort((a, b) => a.localeCompare(b));
     
     dropdown.innerHTML = uniqueRoutes.map(route => 
         `<label><input type="checkbox" value="${route}" onchange="handleRouteSelection(this)" checked> ${route}</label>`
     ).join('');
 
-    // Add all routes to selectedRoutes
     selectedRoutes = new Set(uniqueRoutes);
 }
 
@@ -388,10 +386,6 @@ function bulkEnterDescriptions() {
     });
 }
 
-function truncateText(text, maxLength) {
-    return text.length > maxLength ? text.substring(0, maxLength - 3) + '...' : text;
-}
-
 function handleSort(column) {
     const existingSort = sortColumns.find(sc => sc.column === column);
     if (existingSort) {
@@ -434,7 +428,6 @@ function getFilteredAndSortedData() {
             return 0;
         });
 }
-
 
 function toggleColumnVisibility() {
     const columnsToToggle = ['Date', 'Cust. Name', 'APN', 'Driver', 'Item ID'];
@@ -514,7 +507,7 @@ function renderTable() {
                 cellContent = `<span class="apn-lookup" onclick="copyToClipboard('${cellContent}')">${cellContent}</span>`;
             } else if (header === 'APN Desc.') {
                 const apn = row['APN'];
-                const description = isFirstLoad ? '' : (apnDescriptions[apn] || '');
+                const description = apnDescriptions[apn] || '';
                 cellContent = `<input type="text" value="${description}" onchange="updateAPNDescription('${apn}', this.value)" class="w-full p-1 border rounded" maxlength="20">`;
             } else if (header === 'Driver') {
                 cellContent = `<span class="cursor-pointer hover:underline" onclick="handleDriverClick('${cellContent}', '${row['Route']}')">${cellContent}</span>`;
@@ -529,9 +522,9 @@ function renderTable() {
     tableHTML += '</table>';
 
     tableContainer.innerHTML = tableHTML;
-    isFirstLoad = false;
     updateRouteCheckboxes();
 }
+
 function copyToClipboard(text) {
     navigator.clipboard.writeText(text).then(() => {
         alert('APN Lookup copied to clipboard!');
@@ -539,6 +532,7 @@ function copyToClipboard(text) {
         console.error('Failed to copy: ', err);
     });
 }
+
 function isLocalDriver(driverName) {
     // Split the driver name into parts
     const parts = driverName.split(',').map(part => part.trim());
@@ -556,6 +550,3 @@ document.addEventListener('DOMContentLoaded', (event) => {
     document.getElementById('csvFileInput').addEventListener('change', handleFileUpload);
     document.getElementById('psvFileInput').addEventListener('change', handlePSVUpload);
 });
-</script>
-</body>
-</html>
