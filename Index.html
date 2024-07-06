@@ -307,9 +307,13 @@ function mergeRows(data) {
     return result;
 }
 
-function handleFileUpload(event) {
-    console.log("File upload started");
+function handleCSVFileUpload(event) {
+    console.log("CSV file upload started");
     const file = event.target.files[0];
+    if (!file) {
+        console.log('No CSV file selected.');
+        return;
+    }
     const reader = new FileReader();
     reader.onload = (e) => {
         const text = e.target.result;
@@ -321,17 +325,18 @@ function handleFileUpload(event) {
     reader.readAsText(file);
 }
 
-function handlePSVUpload(event) {
+function handlePSVFileUpload(event) {
+    console.log("PSV file upload started");
     const file = event.target.files[0];
     if (!file) {
         console.log('No PSV file selected.');
         return;
     }
-
     const reader = new FileReader();
     reader.onload = (e) => {
         const text = e.target.result;
         processPSVData(text);
+        checkAPNMatches(); // Make sure this function is defined
         renderTable();
     };
     reader.readAsText(file);
@@ -606,7 +611,13 @@ function updateAPNDescription(rowIndex, description) {
     apnDescriptions[rowIndex] = description;
     renderTable();
 }
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', (event) => {
+    const csvFileInput = document.getElementById('csvFileInput');
+    const psvFileInput = document.getElementById('psvFileInput');
+
+    csvFileInput.addEventListener('change', handleCSVFileUpload);
+    psvFileInput.addEventListener('change', handlePSVFileUpload);
+
     const fileInputs = document.querySelectorAll('.file-input-wrapper input[type="file"]');
     fileInputs.forEach(input => {
         const button = input.nextElementSibling;
