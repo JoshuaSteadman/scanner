@@ -141,6 +141,15 @@
     .psv-button:hover {
         background-color: #1e88e5;
     }
+   
+    .description-input {
+        font-size: inherit;
+        font-family: inherit;
+        width: 100%;
+        padding: 0;
+        border: none;
+        background: transparent;
+    }
 
     /* Other button styles */
     button {
@@ -598,7 +607,6 @@ function updateRouteCheckboxes() {
         checkbox.checked = selectedRoutes.has(checkbox.value);
     });
 }
-
 // Modify the renderTable function to include more logging
 function renderTable() {
     console.log("Rendering table");
@@ -621,25 +629,24 @@ function renderTable() {
 
     // Render body
     tableHTML += '<tbody>';
-    filteredAndSortedData.forEach((row, rowIndex) => {
-        const rowColor = getRowColor(row);
-        tableHTML += `<tr class="${rowColor}">`;
-        csvData.headers.forEach(header => {
-            let cellContent = row[header] || '';
-            if (header === 'APN') {
-                cellContent = `<span class="apn-lookup" onclick="copyToClipboard('${cellContent}')">${cellContent}</span>`;
-            } else if (header === 'APN Desc.') {
-                const description = apnDescriptions[rowIndex] || '';
-                console.log(`Row ${rowIndex}, Description: ${description}`); // Log for debugging
-                cellContent = `<input type="text" value="${description}" onchange="updateAPNDescription(${rowIndex}, this.value)" class="w-full p-1 border rounded" maxlength="20">`;
-            } else if (header === 'Driver') {
-                cellContent = `<span class="cursor-pointer hover:underline" onclick="handleDriverClick('${cellContent}', '${row['Route']}')">${cellContent}</span>`;
-            }
-            const hiddenClass = hiddenColumns.has(header) ? 'hidden-column' : '';
-            tableHTML += `<td class="border p-2 overflow-hidden ${hiddenClass}">${cellContent}</td>`;
+      filteredAndSortedData.forEach((row, rowIndex) => {
+            const rowColor = getRowColor(row);
+            tableHTML += `<tr class="${rowColor}">`;
+            csvData.headers.forEach(header => {
+                let cellContent = row[header] || '';
+                if (header === 'APN') {
+                    cellContent = `<span class="apn-lookup" onclick="copyToClipboard('${cellContent}')">${cellContent}</span>`;
+                } else if (header === 'APN Desc.') {
+                    const description = apnDescriptions[rowIndex] || '';
+                    cellContent = `<input type="text" value="${description}" onchange="updateAPNDescription(${rowIndex}, this.value)" class="description-input" maxlength="20">`;
+                } else if (header === 'Driver') {
+                    cellContent = `<span class="cursor-pointer hover:underline" onclick="handleDriverClick('${cellContent}', '${row['Route']}')">${cellContent}</span>`;
+                }
+                const hiddenClass = hiddenColumns.has(header) ? 'hidden-column' : '';
+                tableHTML += `<td class="border p-2 overflow-hidden ${hiddenClass}">${cellContent}</td>`;
+            });
+            tableHTML += '</tr>';
         });
-        tableHTML += '</tr>';
-    });
     tableHTML += '</tbody></table>';
 
     tableContainer.innerHTML = tableHTML;
