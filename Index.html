@@ -396,6 +396,10 @@ function parseCSV(text) {
             if (header === 'Date') {
                 value = value.replace(' (EDT)', '');
             }
+            // Remove " - FIXED" from the Purpose column
+            if (header === 'Purpose') {
+                value = value.replace(' - FIXED', '');
+            }
             obj[header] = value;
             return obj;
         }, {});
@@ -430,7 +434,6 @@ function parseCSV(text) {
 
     return { headers, data: mergeRows(data) };
 }
-
 function mergeRows(data) {
     console.log("Merging rows...");
     const mergedData = {};
