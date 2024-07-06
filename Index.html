@@ -67,7 +67,6 @@
         <button onclick="toggleLocalDrivers()" class="p-2 border rounded" id="toggleLocalDriversBtn">Hide Local Drivers</button>
         <button onclick="invertRouteSelection()" class="p-2 border rounded">Invert Route Selection</button>
         <input type="file" accept=".psv" id="psvFileInput" class="mb-4 p-2 border rounded">
-        <button onclick="handlePSVUpload()" class="p-2 border rounded">Upload PSV</button>
     </div>
     <div id="tableContainer" class="overflow-x-auto"></div>
 
@@ -125,6 +124,7 @@ let localDrivers = new Set([
     
 ]);
 function processPSVData(text) {
+    console.log("Processing PSV data...");
     const lines = text.split('\n');
     const headers = lines[0].split('|');
     const productDescriptionIndex = headers.findIndex(header => header.trim().startsWith('Product Description USF'));
@@ -145,14 +145,13 @@ function processPSVData(text) {
             }
         }
     });
-
+    console.log("PSV processing complete. Updating table...");
     renderTable();
 }
-function handlePSVUpload() {
-    const fileInput = document.getElementById('psvFileInput');
-    const file = fileInput.files[0];
+function handlePSVUpload(event) {
+    const file = event.target.files[0];
     if (!file) {
-        alert('Please select a PSV file first.');
+        console.log('No PSV file selected.');
         return;
     }
 
@@ -553,9 +552,10 @@ function updateAPNDescription(apn, description) {
     renderTable();
 }
 
- document.addEventListener('DOMContentLoaded', (event) => {
-        document.getElementById('csvFileInput').addEventListener('change', handleFileUpload);
-    });
+document.addEventListener('DOMContentLoaded', (event) => {
+    document.getElementById('csvFileInput').addEventListener('change', handleFileUpload);
+    document.getElementById('psvFileInput').addEventListener('change', handlePSVUpload);
+});
 </script>
 </body>
 </html>
