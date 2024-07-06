@@ -99,7 +99,7 @@
         <button onclick="toggleColumnVisibility()" class="p-2 border rounded">Toggle Column Visibility</button>
         <button onclick="toggleLocalDrivers()" class="p-2 border rounded" id="toggleLocalDriversBtn">Hide Local Drivers</button>
         <button onclick="invertRouteSelection()" class="p-2 border rounded">Invert Route Selection</button>
-    <div class="file-input-wrapper">
+   <div class="file-input-wrapper">
         <input type="file" accept=".psv" id="psvFileInput" class="mb-4">
         <span class="file-input-button">Choose PSV</span>
     </div>
@@ -314,29 +314,17 @@ function handleCSVFileUpload(event) {
         console.log('No CSV file selected.');
         return;
     }
+    if (!file.name.toLowerCase().endsWith('.csv')) {
+        alert('Please select a CSV file.');
+        event.target.value = ''; // Clear the file input
+        return;
+    }
     const reader = new FileReader();
     reader.onload = (e) => {
         const text = e.target.result;
         csvData = parseCSV(text);
         populateRouteDropdown();
         apnDescriptions = {};
-        renderTable();
-    };
-    reader.readAsText(file);
-}
-
-function handlePSVFileUpload(event) {
-    console.log("PSV file upload started");
-    const file = event.target.files[0];
-    if (!file) {
-        console.log('No PSV file selected.');
-        return;
-    }
-    const reader = new FileReader();
-    reader.onload = (e) => {
-        const text = e.target.result;
-        processPSVData(text);
-        checkAPNMatches(); // Make sure this function is defined
         renderTable();
     };
     reader.readAsText(file);
@@ -574,19 +562,23 @@ function renderTable() {
     updateRouteCheckboxes();
 }
 
-// Call this function after processing both CSV and PSV
-function handlePSVUpload(event) {
+function handlePSVFileUpload(event) {
+    console.log("PSV file upload started");
     const file = event.target.files[0];
     if (!file) {
         console.log('No PSV file selected.');
         return;
     }
-
+    if (!file.name.toLowerCase().endsWith('.psv')) {
+        alert('Please select a PSV file.');
+        event.target.value = ''; // Clear the file input
+        return;
+    }
     const reader = new FileReader();
     reader.onload = (e) => {
         const text = e.target.result;
         processPSVData(text);
-        checkAPNMatches(); // Add this line
+        checkAPNMatches(); // Make sure this function is defined
         renderTable();
     };
     reader.readAsText(file);
