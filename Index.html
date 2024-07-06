@@ -296,6 +296,7 @@ function handlePSVUpload(event) {
     reader.onload = (e) => {
         const text = e.target.result;
         processPSVData(text);
+        renderTable();
     };
     reader.readAsText(file);
 }
@@ -311,28 +312,29 @@ function processPSVData(text) {
     console.log(`Product Description USF index: ${productDescriptionIndex}`);
     console.log(`Product Description Laptop index: ${productDescriptionLaptopIndex}`);
 
-    if (productDescriptionIndex === -1 || productDescriptionLaptopIndex === -1) {
+    if (productDescriptionIndex === -1 && productDescriptionLaptopIndex === -1) {
         console.log('Required columns not found in PSV file.');
         return;
     }
 
-    let processedCount = 0;
-    lines.slice(1).forEach(line => {
+    // Reset apnDescriptions to store by row number
+    apnDescriptions = {};
+
+    lines.slice(1).forEach((line, index) => {
         const values = line.split('|');
         if (values.length > Math.max(productDescriptionIndex, productDescriptionLaptopIndex)) {
-            const apn = values[0].trim(); // Assuming the first column is the APN
-            const description = values[productDescriptionIndex].trim() || values[productDescriptionLaptopIndex].trim();
-            if (apn && description) {
-                apnDescriptions[apn] = description;
-                processedCount++;
+            const description = values[productDescriptionIndex]?.trim() || values[productDescriptionLaptopIndex]?.trim() || '';
+            if (description) {
+                apnDescriptions[index] = description;
             }
         }
     });
 
-    console.log(`PSV processing complete. Processed ${processedCount} descriptions.`);
+    console.log(`PSV processing complete. Processed ${Object.keys(apnDescriptions).length} descriptions.`);
     console.log("Sample of processed descriptions:", Object.entries(apnDescriptions).slice(0, 5));
     renderTable();
 }
+
 
 function populateRouteDropdown() {
     console.log("Populating route dropdown");
@@ -491,9 +493,22 @@ function renderTable() {
     const filteredAndSortedData = getFilteredAndSortedData();
     console.log(`Rendering ${filteredAndSortedData.length} rows`);
 
-    // ... (rest of the function remains the same)
+    let tableHTML = '<table class="border-collapse">';
+    
+    // Render headers
+    tableHTML += '<thead><tr>';
+    csvData.headers.forEach(header => {
+        const sortInfo = sortColumns.find(sc => sc.column === header);
+        const sortIndicator = sortInfo ? (sortInfo.direction === 'asc' ? ' ▲' : ' ▼') : '';
+        const hiddenClass = hiddenColumns.has(header) ? 'hidden-column' : '';
+        const columnWidth = getColumnWidth(header);
+        tableHTML += `<th class="border p-2 bg-gray-100 overflow-hidden sortable ${hiddenClass}" onclick="handleSort('${header}')" style="width: ${columnWidth};">${header}${sortIndicator}</th>`;
+    });
+    tableHTML += '</tr></thead>';
 
-    filteredAndSortedData.forEach(row => {
+    // Render body
+    tableHTML += '<tbody>';
+    filteredAndSortedData.forEach((row, rowIndex) => {
         const rowColor = getRowColor(row);
         tableHTML += `<tr class="${rowColor}">`;
         csvData.headers.forEach(header => {
@@ -501,10 +516,9 @@ function renderTable() {
             if (header === 'APN') {
                 cellContent = `<span class="apn-lookup" onclick="copyToClipboard('${cellContent}')">${cellContent}</span>`;
             } else if (header === 'APN Desc.') {
-                const apn = row['APN'];
-                const description = apnDescriptions[apn] || '';
-                console.log(`APN: ${apn}, Description: ${description}`); // Add this line
-                cellContent = `<input type="text" value="${description}" onchange="updateAPNDescription('${apn}', this.value)" class="w-full p-1 border rounded" maxlength="20">`;
+                const description = apnDescriptions[rowIndex] || '';
+                console.log(`Row ${rowIndex}, Description: ${description}`); // Log for debugging
+                cellContent = `<input type="text" value="${description}" onchange="updateAPNDescription(${rowIndex}, this.value)" class="w-full p-1 border rounded" maxlength="20">`;
             } else if (header === 'Driver') {
                 cellContent = `<span class="cursor-pointer hover:underline" onclick="handleDriverClick('${cellContent}', '${row['Route']}')">${cellContent}</span>`;
             }
@@ -513,25 +527,10 @@ function renderTable() {
         });
         tableHTML += '</tr>';
     });
+    tableHTML += '</tbody></table>';
 
-    // ... (rest of the function remains the same)
-}
-
-// Add a new function to check if APNs match between CSV and PSV
-function checkAPNMatches() {
-    const csvAPNs = new Set(csvData.data.map(row => row['APN']));
-    const psvAPNs = new Set(Object.keys(apnDescriptions));
-    
-    const matchingAPNs = new Set([...csvAPNs].filter(apn => psvAPNs.has(apn)));
-    
-    console.log(`Total CSV APNs: ${csvAPNs.size}`);
-    console.log(`Total PSV APNs: ${psvAPNs.size}`);
-    console.log(`Matching APNs: ${matchingAPNs.size}`);
-    
-    if (matchingAPNs.size === 0) {
-        console.log("No matching APNs found. Sample CSV APNs:", Array.from(csvAPNs).slice(0, 5));
-        console.log("Sample PSV APNs:", Array.from(psvAPNs).slice(0, 5));
-    }
+    tableContainer.innerHTML = tableHTML;
+    updateRouteCheckboxes();
 }
 
 // Call this function after processing both CSV and PSV
@@ -567,8 +566,8 @@ function isLocalDriver(driverName) {
     return localDrivers.has(`${parts[0]}, ${parts[1]}`) || localDrivers.has(`${parts[1]} ${parts[0]}`);
 }
 
-function updateAPNDescription(apn, description) {
-    apnDescriptions[apn] = description;
+function updateAPNDescription(rowIndex, description) {
+    apnDescriptions[rowIndex] = description;
     renderTable();
 }
 
