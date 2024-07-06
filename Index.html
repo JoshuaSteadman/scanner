@@ -66,6 +66,8 @@
         <button onclick="toggleColumnVisibility()" class="p-2 border rounded">Toggle Column Visibility</button>
         <button onclick="toggleLocalDrivers()" class="p-2 border rounded" id="toggleLocalDriversBtn">Hide Local Drivers</button>
         <button onclick="invertRouteSelection()" class="p-2 border rounded">Invert Route Selection</button>
+        <input type="file" accept=".psv" id="psvFileInput" class="mb-4 p-2 border rounded">
+        <button onclick="handlePSVUpload()" class="p-2 border rounded">Upload PSV</button>
     </div>
     <div id="tableContainer" class="overflow-x-auto"></div>
 
@@ -122,7 +124,45 @@ let localDrivers = new Set([
     "Robbins, David"
     
 ]);
-    
+function processPSVData(text) {
+    const lines = text.split('\n');
+    const headers = lines[0].split('|');
+    const productDescriptionIndex = headers.findIndex(header => header.trim().startsWith('Product Description USF'));
+    const productDescriptionLaptopIndex = headers.findIndex(header => header.trim().startsWith('Product Description Laptop'));
+
+    if (productDescriptionIndex === -1 || productDescriptionLaptopIndex === -1) {
+        alert('Required columns not found in PSV file.');
+        return;
+    }
+
+    lines.slice(1).forEach(line => {
+        const values = line.split('|');
+        if (values.length > Math.max(productDescriptionIndex, productDescriptionLaptopIndex)) {
+            const apn = values[0].trim(); // Assuming the first column is the APN
+            const description = values[productDescriptionIndex].trim() || values[productDescriptionLaptopIndex].trim();
+            if (apn && description) {
+                apnDescriptions[apn] = description;
+            }
+        }
+    });
+
+    renderTable();
+}
+function handlePSVUpload() {
+    const fileInput = document.getElementById('psvFileInput');
+    const file = fileInput.files[0];
+    if (!file) {
+        alert('Please select a PSV file first.');
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        const text = e.target.result;
+        processPSVData(text);
+    };
+    reader.readAsText(file);
+}
 // Update the toggleLocalDrivers function
 function toggleLocalDrivers() {
     hideLocalDrivers = !hideLocalDrivers;
