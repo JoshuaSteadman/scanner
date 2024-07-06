@@ -314,14 +314,18 @@ function toggleLocalDrivers() {
 
 function copyAllDescriptions() {
     const visibleData = getFilteredAndSortedData();
-    const descriptions = visibleData.map(row => {
-        const apn = row['APN'];
-        return apnDescriptions[apn] || '';
-    }).join('\n');
+    const descriptions = visibleData.map((row, index) => {
+        // Use the row index to get the correct description
+        return apnDescriptions[index] || '';
+    }).filter(desc => desc !== '').join('\n');
     
-    navigator.clipboard.writeText(descriptions).catch(err => {
-        console.error('Failed to copy descriptions: ', err);
-    });
+    if (descriptions) {
+        navigator.clipboard.writeText(descriptions)
+            .then(() => console.log('Descriptions copied successfully'))
+            .catch(err => console.error('Failed to copy descriptions: ', err));
+    } else {
+        console.log('No descriptions to copy');
+    }
 }
 
 function invertRouteSelection() {
