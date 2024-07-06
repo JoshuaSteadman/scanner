@@ -261,6 +261,7 @@ function toggleLocalDrivers() {
     renderTable();
 }
 
+// In copyAllDescriptions function
 function copyAllDescriptions() {
     const visibleData = getFilteredAndSortedData();
     const descriptions = visibleData.map(row => {
@@ -268,11 +269,8 @@ function copyAllDescriptions() {
         return apnDescriptions[apn] || '';
     }).join('\n');
     
-    navigator.clipboard.writeText(descriptions).then(() => {
-        alert('All APN descriptions copied to clipboard!');
-    }).catch(err => {
+    navigator.clipboard.writeText(descriptions).catch(err => {
         console.error('Failed to copy descriptions: ', err);
-        alert('Failed to copy descriptions to clipboard. Please ensure you have copying permissions.');
     });
 }
 
@@ -493,6 +491,7 @@ function copyAllAPNLookups() {
     });
 }
 
+// In bulkEnterDescriptions function
 function bulkEnterDescriptions() {
     navigator.clipboard.readText().then(text => {
         const lines = text.split('\n');
@@ -506,7 +505,6 @@ function bulkEnterDescriptions() {
         renderTable();
     }).catch(err => {
         console.error('Failed to read clipboard: ', err);
-        alert('Failed to read from clipboard. Please ensure you have copying permissions.');
     });
 }
 
@@ -668,10 +666,9 @@ function handlePSVFileUpload(event) {
     };
     reader.readAsText(file);
 }
+// In copyToClipboard function
 function copyToClipboard(text) {
-    navigator.clipboard.writeText(text).then(() => {
-        alert('APN Lookup copied to clipboard!');
-    }).catch(err => {
+    navigator.clipboard.writeText(text).catch(err => {
         console.error('Failed to copy: ', err);
     });
 }
