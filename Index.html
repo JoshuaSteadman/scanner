@@ -365,8 +365,8 @@ function parseCSV(text) {
             row['APN'] = itemId.substring(boldStart, boldEnd);
         }
 
-        if (row['Qty (E/T)']) {
-            const [exc, tot] = row['Qty (E/T)'].split('/').map(v => parseInt(v.trim()) || 0);
+        if (row['Qty']) {
+            const [exc, tot] = row['Qty'].split('/').map(v => parseInt(v.trim()) || 0);
             row['Quantity'] = { exc, tot };
         }
 
@@ -394,7 +394,7 @@ function mergeRows(data) {
 
     const result = Object.values(mergedData).map(row => ({
         ...row,
-        'Qty (E/T)': `${row['Quantity'].exc} / ${row['Quantity'].tot}`
+        'Qty': `${row['Quantity'].exc} / ${row['Quantity'].tot}`
     }));
     console.log(`Merged to ${result.length} rows`);
     return result;
@@ -581,7 +581,7 @@ function getColumnWidth(header) {
         case 'Reason': return '120px';
         case 'Purpose': return '100px';
         case 'Item ID': return '120px';
-        case 'Qty (E/T)': return '80px';
+        case 'Qty': return '80px';
         case 'Driver': return '100px';
         case 'Date': return '80px';
         case 'APN': return '100px';
