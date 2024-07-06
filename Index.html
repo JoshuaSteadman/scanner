@@ -52,7 +52,7 @@
 </head>
 <body class="p-4">
     <div class="mb-4 flex space-x-2">
-        <input type="file" accept=".csv" id="csvfileinput" class="mb-4 p-2 border rounded" placeholder="Select a CSV">
+        <input type="file" accept=".csv" id="csvfileinput" class="mb-4 p-2 border rounded" placeholder="Select a CSV" value=""*.csv">
         <div class="multi-select-dropdown">
             <button onclick="toggleDropdown()" class="p-2 border rounded">Select Routes</button>
             <div id="routeDropdown" class="multi-select-dropdown-content">
@@ -66,7 +66,7 @@
         <button onclick="toggleColumnVisibility()" class="p-2 border rounded">Toggle Column Visibility</button>
         <button onclick="toggleLocalDrivers()" class="p-2 border rounded" id="toggleLocalDriversBtn">Hide Local Drivers</button>
         <button onclick="invertRouteSelection()" class="p-2 border rounded">Invert Route Selection</button>
-        <input type="file" accept=".psv" id="psvFileInput" class="mb-4 p-2 border rounded" placeholder="Select a PSV">>
+        <input type="file" accept=".psv" id="psvFileInput" class="mb-4 p-2 border rounded" placeholder="Select a PSV" value="*.psv">
     </div>
     <div id="tableContainer" class="overflow-x-auto"></div>
 
