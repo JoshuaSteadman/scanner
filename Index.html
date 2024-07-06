@@ -4,55 +4,92 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CSV Parser and Viewer</title>
-    <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        .sortable:hover { cursor: pointer; }
-        .multi-select-dropdown {
-            position: relative;
-            display: inline-block;
-        }
-        .multi-select-dropdown-content {
-            display: none;
-            position: absolute;
-            background-color: #f9f9f9;
-            min-width: 160px;
-            box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
-            z-index: 1;
-            max-height: 300px;
-            overflow-y: auto;
-        }
-        .multi-select-dropdown-content label {
-            display: block;
-            padding: 5px;
-        }
-        .multi-select-dropdown-content label:hover {
-            background-color: #f1f1f1;
-        }
-        .show {display:block;}
-        table {
-            table-layout: auto;
-            width: 100%;
-        }
-        th, td {
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            max-width: 200px;
-        }
-        .apn-lookup {
-            cursor: pointer;
-        }
-        .apn-lookup:hover {
-            text-decoration: underline;
-        }
-        .hidden-column {
-            display: none;
-        }
-        <style>
-    .file-input-wrapper {
+    @import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css');
+
+    /* General styles */
+    body {
+        font-family: Arial, sans-serif;
+    }
+
+    /* Table styles */
+    table {
+        table-layout: auto;
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    th, td {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 200px;
+        border: 1px solid #ddd;
+        padding: 8px;
+    }
+
+    th {
+        background-color: #f2f2f2;
+        font-weight: bold;
+    }
+
+    /* Sortable header styles */
+    .sortable:hover {
+        cursor: pointer;
+        background-color: #e6e6e6;
+    }
+
+    /* Multi-select dropdown styles */
+    .multi-select-dropdown {
         position: relative;
         display: inline-block;
     }
+
+    .multi-select-dropdown-content {
+        display: none;
+        position: absolute;
+        background-color: #f9f9f9;
+        min-width: 160px;
+        box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+        z-index: 1;
+        max-height: 300px;
+        overflow-y: auto;
+    }
+
+    .multi-select-dropdown-content label {
+        display: block;
+        padding: 5px;
+    }
+
+    .multi-select-dropdown-content label:hover {
+        background-color: #f1f1f1;
+    }
+
+    .show {
+        display: block;
+    }
+
+    /* APN lookup styles */
+    .apn-lookup {
+        cursor: pointer;
+    }
+
+    .apn-lookup:hover {
+        text-decoration: underline;
+    }
+
+    /* Hidden column styles */
+    .hidden-column {
+        display: none;
+    }
+
+    /* File input wrapper styles */
+    .file-input-wrapper {
+        position: relative;
+        display: inline-block;
+        margin-right: 10px;
+    }
+
     .file-input-wrapper input[type="file"] {
         position: absolute;
         left: 0;
@@ -62,23 +99,72 @@
         height: 100%;
         cursor: pointer;
     }
+
+    /* File input button styles */
     .file-input-button {
         display: inline-block;
         padding: 0.5rem 1rem;
-        background-color: #f3f4f6;
-        border: 1px solid #d1d5db;
         border-radius: 0.25rem;
         font-size: 0.875rem;
         line-height: 1.25rem;
         font-weight: 500;
-        color: #374151;
         cursor: pointer;
+        transition: background-color 0.3s, box-shadow 0.3s;
     }
+
     .file-input-button:hover {
-        background-color: #e5e7eb;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     }
+
+    .file-input-button i {
+        margin-right: 0.5rem;
+    }
+
+    /* CSV button styles */
+    .csv-button {
+        background-color: #4CAF50;
+        color: white;
+        border: 1px solid #45a049;
+    }
+
+    .csv-button:hover {
+        background-color: #45a049;
+    }
+
+    /* PSV button styles */
+    .psv-button {
+        background-color: #2196F3;
+        color: white;
+        border: 1px solid #1e88e5;
+    }
+
+    .psv-button:hover {
+        background-color: #1e88e5;
+    }
+
+    /* Other button styles */
+    button {
+        padding: 0.5rem 1rem;
+        margin-right: 0.5rem;
+        border: 1px solid #ccc;
+        border-radius: 0.25rem;
+        background-color: #f8f9fa;
+        cursor: pointer;
+        transition: background-color 0.3s;
+    }
+
+    button:hover {
+        background-color: #e9ecef;
+    }
+
+    /* Row color styles */
+    .bg-yellow-200 { background-color: #fefcbf; }
+    .bg-green-200 { background-color: #c6f6d5; }
+    .bg-yellow-300 { background-color: #faf089; }
+    .bg-red-200 { background-color: #fed7d7; }
+    .bg-orange-200 { background-color: #feebc8; }
+    .bg-blue-200 { background-color: #bee3f8; }
 </style>
-    </style>
 </head>
 <body class="p-4">
 <div class="mb-4 flex space-x-2">
@@ -615,9 +701,11 @@ document.addEventListener('DOMContentLoaded', (event) => {
         const button = input.nextElementSibling;
         input.addEventListener('change', function() {
             if (this.files.length > 0) {
-                button.textContent = this.files[0].name;
+                const icon = button.querySelector('i').outerHTML;
+                button.innerHTML = `${icon} ${this.files[0].name}`;
             } else {
-                button.textContent = this.accept === '.csv' ? 'Choose CSV' : 'Choose PSV';
+                const icon = button.querySelector('i').outerHTML;
+                button.innerHTML = `${icon} ${this.accept === '.csv' ? 'Choose CSV' : 'Choose PSV'}`;
             }
         });
     });
