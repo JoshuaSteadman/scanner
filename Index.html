@@ -664,7 +664,6 @@ function handlePSVFileUpload(event) {
     reader.onload = (e) => {
         const text = e.target.result;
         processPSVData(text);
-        checkAPNMatches(); // Make sure this function is defined
         renderTable();
     };
     reader.readAsText(file);
