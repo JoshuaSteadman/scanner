@@ -382,10 +382,10 @@ function bulkEnterDescriptions() {
     navigator.clipboard.readText().then(text => {
         const lines = text.split('\n');
         const visibleData = getFilteredAndSortedData();
-        lines.forEach((line, index) => {
-            if (index < visibleData.length) {
-                const apn = visibleData[index]['APN'];
-                apnDescriptions[apn] = line.trim();
+        visibleData.forEach((row, index) => {
+            if (index < lines.length) {
+                const description = lines[index].trim();
+                apnDescriptions[index] = description;
             }
         });
         renderTable();
