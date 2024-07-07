@@ -240,6 +240,7 @@
             <button onclick="copyAllDescriptions()" class="p-2 border rounded">Copy Column Desc</button>
             <button onclick="toggleColumnVisibility()" class="p-2 border rounded">Toggle Column Visibility</button>
             <button onclick="toggleLocalDrivers()" class="p-2 border rounded" id="toggleLocalDriversBtn">Hide Local Drivers</button>
+	    <button onclick="toggleDateColumn()" class="p-2 border rounded" id="toggleDateBtn">Hide Date</button>
             <button onclick="invertRouteSelection()" class="p-2 border rounded">Invert Route Selection</button>
             <div class="file-input-wrapper">
                 <input type="file" accept=".psv" id="psvFileInput" class="mb-4">
@@ -258,6 +259,7 @@ let sortColumns = [
 ];
 let selectedRoutes = new Set();
 let apnDescriptions = {};
+let isDateColumnHidden = false;
 let hideProcessingDelivery = false;
 let hiddenColumns = new Set();
 let hideLocalDrivers = false;
@@ -577,7 +579,9 @@ function bulkEnterDescriptions() {
     });
 }
 
+// Modify the existing handleSort function
 function handleSort(column) {
+    if (column === 'Date' && isDateColumnHidden) return;
     const existingSort = sortColumns.find(sc => sc.column === column);
     if (existingSort) {
         existingSort.direction = existingSort.direction === 'asc' ? 'desc' : 'asc';
@@ -667,7 +671,17 @@ function updateRouteCheckboxes() {
         checkbox.checked = selectedRoutes.has(checkbox.value);
     });
 }
-// Modify the renderTable function to include more logging limited width of column update
+
+
+// Add this new function to your JavaScript
+function toggleDateColumn() {
+    isDateColumnHidden = !isDateColumnHidden;
+    const btn = document.getElementById('toggleDateBtn');
+    btn.textContent = isDateColumnHidden ? 'Show Date' : 'Hide Date';
+    renderTable();
+}
+
+// Modify the existing renderTable function
 function renderTable() {
     console.log("Rendering table");
     const tableContainer = document.getElementById('tableContainer');
@@ -679,6 +693,7 @@ function renderTable() {
     // Render headers
     tableHTML += '<thead><tr>';
     csvData.headers.forEach(header => {
+        if (header === 'Date' && isDateColumnHidden) return;
         const sortInfo = sortColumns.find(sc => sc.column === header);
         const sortIndicator = sortInfo ? (sortInfo.direction === 'asc' ? ' ▲' : ' ▼') : '';
         const hiddenClass = hiddenColumns.has(header) ? 'hidden-column' : '';
@@ -693,6 +708,7 @@ function renderTable() {
         const rowColor = getRowColor(row);
         tableHTML += `<tr class="${rowColor}">`;
         csvData.headers.forEach(header => {
+            if (header === 'Date' && isDateColumnHidden) return;
             let cellContent = row[header] || '';
             if (header === 'APN') {
                 cellContent = `<span class="apn-lookup" onclick="copyToClipboard('${cellContent}')">${cellContent}</span>`;
