@@ -6,46 +6,46 @@
     <title>Automate Report Generation</title>
 </head>
 <body>
-    <h1>US Foods Login</h1>
-    <button id="loginBtn">Go to Login</button>
-    <button id="generateReportBtn1" disabled>Center Report CSV Download</button>
-    <button id="generateReportBtn2" disabled>Driver Checkin Report CSV Download</button>
-    <button id="generateReportBtn3" disabled>Driver Checkin Report URL</button>
+    <h1>US Foods</h1>
+    <button id="loginBtn">AirClic Login</button>
+    <button id="centerReportBtn" disabled>Center Report CSV</button>
+    <button id="driverCheckinReportBtn" disabled>Driver Checkin Report CSV</button>
+    <button id="driverCheckinReportUrlBtn" disabled>Driver Checkin Report URL</button>
 	<p><a href="https://usfoodsdci.netlify.app/" target="_blank">Exceptions Report Viewer</a></p>
-	<p><a href="https://reportcenter.netlify.app" target="_blank">Center Report CSV Viewer</a></p>
+	<p><a href="https://reportcenter.netlify.app" target="_blank">Center Report Viewer</a></p>
 	
 
     <script>
         document.getElementById('loginBtn').addEventListener('click', function() {
             window.open('https://usfoods.airclic.com/web/login.xhtml', '_blank');
-            document.getElementById('generateReportBtn1').disabled = false;
-            document.getElementById('generateReportBtn2').disabled = false;
-            document.getElementById('generateReportBtn3').disabled = false;
+            document.getElementById('centerReportBtn').disabled = false;
+            document.getElementById('driverCheckinReportBtn').disabled = false;
+            document.getElementById('driverCheckinReportUrlBtn').disabled = false;
         });
 
-        document.getElementById('generateReportBtn1').addEventListener('click', function() {
-            generateDynamicReportUrl1();
+        document.getElementById('centerReportBtn').addEventListener('click', function() {
+            dynamicCenterReportUrl();
         });
 
-        document.getElementById('generateReportBtn2').addEventListener('click', function() {
-            generateDynamicReportUrl2();
+        document.getElementById('driverCheckinReportBtn').addEventListener('click', function() {
+            dynamicReportCSV();
         });
 
-        document.getElementById('generateReportBtn3').addEventListener('click', function() {
-            generateDynamicReportUrl3();
+        document.getElementById('driverCheckinReportUrlBtn').addEventListener('click', function() {
+            dynamicReportURL();
         });
 
-        function generateDynamicReportUrl1() {
+        function dynamicCenterReportUrl() {
             const url = generateDynamicReportUrl("https://usfoods.airclic.com/web/reports/report?centerId=62&shipmentItemsType=all&orderNumber=&routeNumber=-1&supplierId=-1&webUserId=495259&reportId=5&scheduleEntryTypeId=-1&handheldNumber=&palletNumber=&purposeId=2&lookupType=matches&customerNumber=&customerName=&receiverId=-1&driverId=-1&reasonId=1&referenceNumber=&vehicleId=-1&containerId=&shipmentNumber=&centerName=&reportFormat=CSV");
             window.open(url, '_blank');
         }
 
-        function generateDynamicReportUrl2() {
+        function dynamicReportCSV() {
             const url = generateDynamicReportUrl("https://usfoods.airclic.com/web/reports/report?centerId=62&shipmentItemsType=all&orderNumber=&routeNumber=-1&supplierId=-1&webUserId=495259&reportId=82&scheduleEntryTypeId=-1&handheldNumber=&palletNumber=&purposeId=2&lookupType=matches&customerNumber=&customerName=&receiverId=-1&driverId=-1&reasonId=1&referenceNumber=&vehicleId=-1&containerId=&shipmentNumber=&centerName=&reportFormat=CSV");
             window.open(url, '_blank');
         }
 
-        function generateDynamicReportUrl3() {
+        function dynamicReportURL() {
             const url = generateDynamicReportUrl("https://usfoods.airclic.com/web/ui/reports/report.xhtml?reportId=82&centerId=62&driverId=-1&webUserId=495259&purposeId=2&reasonId=1&orderNumber=&referenceNumber=&palletNumber=&routeNumber=-1&vehicleId=-1&scheduleEntryTypeId=-1&customerNumber=&customerName=&containerId=&lookupType=matches&handheldNumber=&centerName=&shipmentItemsType=all&receiverId=-1&supplierId=-1&shipmentNumber=");
             window.open(url, '_blank');
         }
