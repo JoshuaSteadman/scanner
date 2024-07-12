@@ -16,12 +16,15 @@
             flex-direction: column;
             align-items: center;
             padding: 20px;
+            max-width: 600px;
+            margin: 0 auto;
         }
         h1 {
-            margin: 0;
+            margin: 20px 0;
             color: #333;
+            text-align: center;
         }
-        button {
+        .btn {
             margin: 10px;
             padding: 10px 20px;
             font-size: 16px;
@@ -31,62 +34,72 @@
             border-radius: 4px;
             cursor: pointer;
             transition: background-color 0.3s;
+            text-align: center;
+            text-decoration: none;
+            display: block;
+            width: 100%;
+            box-sizing: border-box;
         }
-        button:hover {
+        .btn:hover {
             background-color: #45a049;
         }
-        button:disabled {
+        .btn:disabled {
             opacity: 0.6;
             cursor: not-allowed;
         }
-        a {
-            color: #007BFF;
-            text-decoration: none;
-        }
         .logo {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            width: 100px;
+            display: block;
+            margin: 20px auto;
+            max-width: 100px;
             height: auto;
+        }
+        @media (max-width: 600px) {
+            .container {
+                padding: 10px;
+            }
+            .btn {
+                font-size: 14px;
+                padding: 8px 16px;
+            }
         }
     </style>
 </head>
 <body>
     <img class="logo" src="https://www.usfoods.com/content/dam/dce/images/general/new_usf_logo_0914.png" alt="US Foods Logo">
     <div class="container">
-        <h1>US Foods</h1>
-        <button id="loginBtn">AirClic Login</button>
-        <button id="centerReportBtn" disabled>Center Report CSV</button>
-        <button id="driverCheckinReportBtn" disabled>Driver Checkin Report CSV</button>
-        <button id="driverCheckinReportUrlBtn" disabled>Driver Checkin Report URL</button>
-        <button id="driverCheckinReportPdfBtn" disabled>Driver Checkin Report PDF</button>
-        <p><a href="https://usfoodsdci.netlify.app/" target="_blank">Exceptions Report Viewer</a></p>
-        <p><a href="https://reportcenter.netlify.app" target="_blank">Center Report Viewer</a></p>
+        <a href="#" id="loginBtn" class="btn">AirClic Login</a>
+        <a href="#" id="centerReportBtn" class="btn" disabled>Center Report CSV</a>
+        <a href="#" id="driverCheckinReportBtn" class="btn" disabled>Driver Checkin Report CSV</a>
+        <a href="#" id="driverCheckinReportUrlBtn" class="btn" disabled>Driver Checkin Report URL</a>
+        <a href="#" id="driverCheckinReportPdfBtn" class="btn" disabled>Driver Checkin Report PDF</a>
+        <a href="https://usfoodsdci.netlify.app/" id="exceptionsReportBtn" class="btn" target="_blank">Exceptions Report Viewer</a>
+        <a href="https://reportcenter.netlify.app" id="centerReportViewerBtn" class="btn" target="_blank">Center Report Viewer</a>
     </div>
     <script>
-        document.getElementById('loginBtn').addEventListener('click', function() {
+        document.getElementById('loginBtn').addEventListener('click', function(e) {
+            e.preventDefault();
             window.open('https://usfoods.airclic.com/web/login.xhtml', '_blank');
-            document.getElementById('centerReportBtn').disabled = false;
-            document.getElementById('driverCheckinReportBtn').disabled = false;
-            document.getElementById('driverCheckinReportUrlBtn').disabled = false;
-            document.getElementById('driverCheckinReportPdfBtn').disabled = false;
+            document.querySelectorAll('.btn[disabled]').forEach(btn => btn.removeAttribute('disabled'));
         });
 
-        document.getElementById('centerReportBtn').addEventListener('click', function() {
-            dynamicCenterReportUrl();
+        document.getElementById('centerReportBtn').addEventListener('click', function(e) {
+            e.preventDefault();
+            if (!this.hasAttribute('disabled')) dynamicCenterReportUrl();
         });
 
-        document.getElementById('driverCheckinReportBtn').addEventListener('click', function() {
-            dynamicReportCSV();
+        document.getElementById('driverCheckinReportBtn').addEventListener('click', function(e) {
+            e.preventDefault();
+            if (!this.hasAttribute('disabled')) dynamicReportCSV();
         });
 
-        document.getElementById('driverCheckinReportUrlBtn').addEventListener('click', function() {
-            dynamicReportURL();
+        document.getElementById('driverCheckinReportUrlBtn').addEventListener('click', function(e) {
+            e.preventDefault();
+            if (!this.hasAttribute('disabled')) dynamicReportURL();
         });
 
-        document.getElementById('driverCheckinReportPdfBtn').addEventListener('click', function() {
-            dynamicReportPDF();
+        document.getElementById('driverCheckinReportPdfBtn').addEventListener('click', function(e) {
+            e.preventDefault();
+            if (!this.hasAttribute('disabled')) dynamicReportPDF();
         });
 
         function dynamicCenterReportUrl() {
@@ -113,7 +126,6 @@
             var currentDate = new Date();
             var fromDate;
 
-            // Calculate the start date based on the current day
             switch (currentDate.getDay()) {
                 case 0: // Sunday
                     fromDate = new Date(currentDate);
@@ -132,13 +144,12 @@
             var fromTimestamp = dateToTimestamp(fromDate, 1, 0); // 1 AM
             var toTimestamp = dateToTimestamp(currentDate, 23, 59, 59); // Midnight
 
-            // Construct the URL with dynamic date parameters
             return baseURL + "&from=" + fromTimestamp + "&to=" + toTimestamp;
         }
 
         function dateToTimestamp(dateVal, hour, minute, second = 0) {
-            dateVal.setHours(hour, minute, second, 0); // Set the specific time
-            var timestamp = dateVal.getTime(); // Get the time in milliseconds since 1970-01-01
+            dateVal.setHours(hour, minute, second, 0);
+            var timestamp = dateVal.getTime();
             return timestamp.toString();
         }
     </script>
