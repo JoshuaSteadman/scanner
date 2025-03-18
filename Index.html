@@ -103,46 +103,50 @@
         });
 
         function dynamicCenterReportUrl() {
-            const url = generateDynamicReportUrl("https://usfoods.airclic.com/web/reports/report?centerId=62&shipmentItemsType=all&orderNumber=&routeNumber=-1&supplierId=-1&webUserId=495259&reportId=5&scheduleEntryTypeId=-1&handheldNumber=&palletNumber=&purposeId=2&lookupType=matches&customerNumber=&customerName=&receiverId=-1&driverId=-1&reasonId=1&referenceNumber=&vehicleId=-1&containerId=&shipmentNumber=&centerName=&reportFormat=CSV");
+            const url = generateDynamicReportUrl("https://usfoods.airclic.com/web/reports/report?centerId=62&shipmentItemsType=all&orderNumber=&routeNumber=-1&supplierId=-1&webUserId=495259&reportId=5&scheduleEntryTypeId=-1&handheldNumber=&palletNumber=&purposeId=2&lookupType=matches&customerNumber=&customerName=&receiverId=-1&driverId=-1&reasonId=1&referenceNumber=&vehicleId=-1&containerId=&shipmentNumber=¢erName=&reportFormat=CSV");
             window.open(url, '_blank');
         }
 
         function dynamicReportCSV() {
-            const url = generateDynamicReportUrl("https://usfoods.airclic.com/web/reports/report?centerId=62&shipmentItemsType=all&orderNumber=&routeNumber=-1&supplierId=-1&webUserId=495259&reportId=82&scheduleEntryTypeId=-1&handheldNumber=&palletNumber=&purposeId=2&lookupType=matches&customerNumber=&customerName=&receiverId=-1&driverId=-1&reasonId=1&referenceNumber=&vehicleId=-1&containerId=&shipmentNumber=&centerName=&reportFormat=CSV");
+            const url = generateDynamicReportUrl("https://usfoods.airclic.com/web/reports/report?centerId=62&shipmentItemsType=all&orderNumber=&routeNumber=-1&supplierId=-1&webUserId=495259&reportId=82&scheduleEntryTypeId=-1&handheldNumber=&palletNumber=&purposeId=2&lookupType=matches&customerNumber=&customerName=&receiverId=-1&driverId=-1&reasonId=1&referenceNumber=&vehicleId=-1&containerId=&shipmentNumber=¢erName=&reportFormat=CSV");
             window.open(url, '_blank');
         }
 
         function dynamicReportURL() {
-            const url = generateDynamicReportUrl("https://usfoods.airclic.com/web/ui/reports/report.xhtml?reportId=82&centerId=62&driverId=-1&webUserId=495259&purposeId=2&reasonId=1&orderNumber=&referenceNumber=&palletNumber=&routeNumber=-1&vehicleId=-1&scheduleEntryTypeId=-1&customerNumber=&customerName=&containerId=&lookupType=matches&handheldNumber=&centerName=&shipmentItemsType=all&receiverId=-1&supplierId=-1&shipmentNumber=");
+            const url = generateDynamicReportUrl("https://usfoods.airclic.com/web/ui/reports/report.xhtml?reportId=82¢erId=62&driverId=-1&webUserId=495259&purposeId=2&reasonId=1&orderNumber=&referenceNumber=&palletNumber=&routeNumber=-1&vehicleId=-1&scheduleEntryTypeId=-1&customerNumber=&customerName=&containerId=&lookupType=matches&handheldNumber=¢erName=&shipmentItemsType=all&receiverId=-1&supplierId=-1&shipmentNumber=");
             window.open(url, '_blank');
         }
 
         function dynamicReportPDF() {
-            const url = generateDynamicReportUrl("https://usfoods.airclic.com/web/reports/report.pdf?centerId=62&shipmentItemsType=all&orderNumber=&routeNumber=-1&supplierId=-1&webUserId=495259&reportId=82&scheduleEntryTypeId=-1&handheldNumber=&palletNumber=&purposeId=2&lookupType=matches&customerNumber=&customerName=&receiverId=-1&driverId=-1&reasonId=1&referenceNumber=&vehicleId=-1&containerId=&shipmentNumber=&centerName=&reportFormat=PDF");
+            const url = generateDynamicReportUrl("https://usfoods.airclic.com/web/reports/report.pdf?centerId=62&shipmentItemsType=all&orderNumber=&routeNumber=-1&supplierId=-1&webUserId=495259&reportId=82&scheduleEntryTypeId=-1&handheldNumber=&palletNumber=&purposeId=2&lookupType=matches&customerNumber=&customerName=&receiverId=-1&driverId=-1&reasonId=1&referenceNumber=&vehicleId=-1&containerId=&shipmentNumber=¢erName=&reportFormat=PDF");
             window.open(url, '_blank');
         }
 
         function generateDynamicReportUrl(baseURL) {
             var currentDate = new Date();
             var fromDate;
+            var toDate;
 
             switch (currentDate.getDay()) {
                 case 0: // Sunday
                     fromDate = new Date(currentDate);
                     fromDate.setDate(fromDate.getDate() - 2); // Friday
+                    toDate = new Date(currentDate);
+                    toDate.setDate(toDate.getDate() - 1); // Saturday
                     break;
                 case 6: // Saturday
                     fromDate = new Date(currentDate);
                     fromDate.setDate(fromDate.getDate() - 1); // Friday
+                    toDate = new Date(currentDate); // Saturday (current day)
                     break;
-                default:
-                    fromDate = new Date(currentDate);
-                    fromDate.setDate(fromDate.getDate()); // Previous day
+                default: // Monday to Friday
+                    fromDate = new Date(currentDate); // Current day
+                    toDate = new Date(currentDate); // Current day
                     break;
             }
 
             var fromTimestamp = dateToTimestamp(fromDate, 1, 0); // 1 AM
-            var toTimestamp = dateToTimestamp(currentDate, 23, 59, 59); // Midnight
+            var toTimestamp = dateToTimestamp(toDate, 23, 59, 59); // 11:59:59 PM
 
             return baseURL + "&from=" + fromTimestamp + "&to=" + toTimestamp;
         }
